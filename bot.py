@@ -8,7 +8,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
 # Takip edilecek ürünler
-ARANAN_URUNLER = ["esp32 s3", "3.5 inch spi ekran"]
+ARANAN_URUNLER = ["iphone", "airpod"]
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
