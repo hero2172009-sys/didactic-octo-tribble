@@ -7,7 +7,9 @@ import telebot
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
-ARANAN_URUN = "esp32"
+
+# Takip etmek istediğin ürünlerin listesi
+ARANAN_URUNLER = ["esp32 s3", "3.5 inch spi ekran"]
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -35,8 +37,8 @@ def fiyat_temizle(fiyat_str):
     return None
 
 
-def trendyol_ara():
-  url = f"https://www.trendyol.com/sr?q={ARANAN_URUN}"
+def trendyol_ara(urun):
+  url = f"https://www.trendyol.com/sr?q={urun.replace(' ', '+')}"
   try:
     res = requests.get(url, headers=HEADERS, timeout=15)
     if res.status_code == 200:
@@ -54,8 +56,8 @@ def trendyol_ara():
   return float("inf"), "Bulunamadı", ""
 
 
-def hepsiburada_ara():
-  url = f"https://www.hepsiburada.com/ara?q={ARANAN_URUN}"
+def hepsiburada_ara(urun):
+  url = f"https://www.hepsiburada.com/ara?q={urun.replace(' ', '+')}"
   try:
     res = requests.get(url, headers=HEADERS, timeout=15)
     if res.status_code == 200:
@@ -71,24 +73,35 @@ def hepsiburada_ara():
   return float("inf"), "Bulunamadı", ""
 
 
-print("Bulut taraması başlatılıyor...")
-t_fiyat, t_ad, t_link = trendyol_ara()
-h_fiyat, h_ad, h_link = hepsiburada_ara()
+print("Çoklu ürün taraması başlatılıyor...")
+rapor_mesaji = "🔍 **Güncel Fiyat Raporu:**\n"
 
-if t_fiyat < h_fiyat and t_fiyat != float("inf"):
-  mesaj = (
-      f"🏆 **Trendyol Daha Ucuz!**\n\n📦 Ürün: {t_ad}\n💰 Fiyat:"
-      f" {t_fiyat:,.2f} TL\n🔗 [Ürüne Git]({t_link})"
+for urun in ARANAN_URUNLER:
+  t_fiyat, t_ad, t_link = trendyol_ara(urun)
+  h_fiyat, h_ad, h_link = hepsiburada_ara(urun)
+
+  rapor_mesaji += f"\n📦 **{urun.upper()}**\n"
+
+  if t_fiyat == float("inf") and h_fiyat == float("inf"):
+    rapor_mesaji += "❌ Hiçbir sitede ürün bulunamadı.\n"
+    continue
+
+  if t_fiyat <= h_fiyat:
+    en_ucuz_fiyat = t_fiyat
+    en_ucuz_site = "Trendyol"
+    en_ucuz_link = t_link
+    en_ucuz_ad = t_ad
+  else:
+    en_ucuz_fiyat = h_fiyat
+    en_ucuz_site = "Hepsiburada"
+    en_ucuz_link = h_link
+    en_ucuz_ad = h_ad
+
+  rapor_mesaji += (
+      f"🏆 En Ucuz: **{en_ucuz_site}** - {en_ucuz_fiyat:,.2f} TL\n🔗"
+      f" [Ürüne Git]({en_ucuz_link})\n"
   )
-  bot.send_message(CHAT_ID, mesaj, parse_mode="Markdown")
-elif h_fiyat < t_fiyat and h_fiyat != float("inf"):
-  mesaj = (
-      f"🏆 **Hepsiburada Daha Ucuz!**\n\n📦 Ürün: {h_ad}\n💰 Fiyat:"
-      f" {h_fiyat:,.2f} TL\n🔗 [Ürüne Git]({h_link})"
-  )
-  bot.send_message(CHAT_ID, mesaj, parse_mode="Markdown")
-else:
-  print("Fiyat avantajı bulunamadı.")
-# Botun her çalıştığında atacağı mesaj
-bot.send_message(CHAT_ID, "✅ Tarama başarıyla başlatıldı ve çalışıyor!")
-    
+
+# Telegram'a raporu gönder
+bot.send_message(CHAT_ID, rapor_mesaji, parse_mode="Markdown")
+print("Rapor başarıyla gönderildi.")
