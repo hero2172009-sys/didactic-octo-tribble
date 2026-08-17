@@ -89,3 +89,6 @@ elif h_fiyat < t_fiyat and h_fiyat != float("inf"):
   bot.send_message(CHAT_ID, mesaj, parse_mode="Markdown")
 else:
   print("Fiyat avantajı bulunamadı.")
+# Botun her çalıştığında atacağı mesaj
+bot.send_message(CHAT_ID, "✅ Tarama başarıyla başlatıldı ve çalışıyor!")
+    
